@@ -4,7 +4,9 @@ using System.CommandLine;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using VismaTask1.Commands;  
+using VismaTask1.Models;
+using VismaTask1.Repositories;
 namespace TestVismaTask1.Commands
 {
     public class FactoryOptionsCommandTests

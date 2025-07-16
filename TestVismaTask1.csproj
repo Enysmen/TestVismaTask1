@@ -22,4 +22,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\VismaTask1\VismaTask1.csproj" />
+  </ItemGroup>
+
 </Project>

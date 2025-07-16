@@ -6,7 +6,9 @@ using System.Text.Json;
 using System.Threading.Tasks;
 
 using Microsoft.Extensions.Logging;
-
+using VismaTask1.Models;
+using VismaTask1.Repositories;
+using VismaTask1.Services;
 using Moq;
 
 namespace TestVismaTask1.Repositories
