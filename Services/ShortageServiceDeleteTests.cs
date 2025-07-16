@@ -31,8 +31,7 @@ namespace TestVismaTask1.Services
             _repoMock.Setup(r => r.LoadAll()).Returns(new List<Shortage> { item });
 
             List<Shortage> saved = null;
-            _repoMock.Setup(r => r.SaveAll(It.IsAny<List<Shortage>>()))
-                     .Callback<List<Shortage>>(lst => saved = lst);
+            _repoMock.Setup(r => r.SaveAll(It.IsAny<List<Shortage>>())).Callback<List<Shortage>>(lst => saved = lst);
 
             _service.Delete("T", Room.Kitchen, "alice", isAdmin: false);
 
@@ -47,8 +46,7 @@ namespace TestVismaTask1.Services
             _repoMock.Setup(r => r.LoadAll()).Returns(new List<Shortage> { item });
 
             List<Shortage> saved = null;
-            _repoMock.Setup(r => r.SaveAll(It.IsAny<List<Shortage>>()))
-                     .Callback<List<Shortage>>(lst => saved = lst);
+            _repoMock.Setup(r => r.SaveAll(It.IsAny<List<Shortage>>())).Callback<List<Shortage>>(lst => saved = lst);
 
             _service.Delete("T", Room.Bathroom, "alice", isAdmin: true);
 
@@ -60,8 +58,7 @@ namespace TestVismaTask1.Services
         {
             _repoMock.Setup(r => r.LoadAll()).Returns(new List<Shortage>());
 
-            Assert.Throws<InvalidOperationException>(
-                () => _service.Delete("NonExistent", Room.Kitchen, "user", isAdmin: false));
+            Assert.Throws<InvalidOperationException>(() => _service.Delete("NonExistent", Room.Kitchen, "user", isAdmin: false));
         }
 
         [Fact]
@@ -70,8 +67,7 @@ namespace TestVismaTask1.Services
             var item = new Shortage { Title = "X", Room = Room.Kitchen, Name = "owner" };
             _repoMock.Setup(r => r.LoadAll()).Returns(new List<Shortage> { item });
 
-            Assert.Throws<UnauthorizedAccessException>(
-                () => _service.Delete("X", Room.Kitchen, "notOwner", isAdmin: false));
+            Assert.Throws<UnauthorizedAccessException>(() => _service.Delete("X", Room.Kitchen, "notOwner", isAdmin: false));
         }
     }
 }

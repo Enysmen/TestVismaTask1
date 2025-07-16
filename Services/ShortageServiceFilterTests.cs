@@ -18,7 +18,6 @@ namespace TestVismaTask1.Services
 
         public ShortageServiceFilterTests()
         {
-            // Репозиторий в фильтре не используется
             var repoMock = new Mock<IShortageRepository>();
             var logger = new LoggerFactory().CreateLogger<ShortageService>();
             _service = new ShortageService(repoMock.Object, logger);

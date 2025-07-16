@@ -74,7 +74,10 @@ namespace TestVismaTask1.Repositories
         public void Dispose()
         {
             if (File.Exists(_tempFile))
+            {
                 File.Delete(_tempFile);
+            }
+                
         }
     }
 }

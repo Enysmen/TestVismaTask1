@@ -29,8 +29,7 @@ namespace TestVismaTask1.Services
         {
             _repoMock.Setup(r => r.LoadAll()).Returns(new List<Shortage>());
             List<Shortage> saved = null;
-            _repoMock.Setup(r => r.SaveAll(It.IsAny<List<Shortage>>()))
-                     .Callback<List<Shortage>>(lst => saved = lst);
+            _repoMock.Setup(r => r.SaveAll(It.IsAny<List<Shortage>>())).Callback<List<Shortage>>(lst => saved = lst);
 
             var input = new Shortage
             {
@@ -89,8 +88,7 @@ namespace TestVismaTask1.Services
             _repoMock.Setup(r => r.LoadAll()).Returns(new List<Shortage> { existing });
 
             List<Shortage> saved = null;
-            _repoMock.Setup(r => r.SaveAll(It.IsAny<List<Shortage>>()))
-                     .Callback<List<Shortage>>(lst => saved = lst);
+            _repoMock.Setup(r => r.SaveAll(It.IsAny<List<Shortage>>())).Callback<List<Shortage>>(lst => saved = lst);
 
             var input = new Shortage
             {
