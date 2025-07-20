@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Parsing;
+using System.CommandLine.NamingConventionBinder;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -11,157 +12,115 @@ using VismaTask1.Models;
 using VismaTask1.Repositories;
 namespace TestVismaTask1.Commands
 {
-    public static class FactoryOptionsCommand
+    public class FactoryOptionsCommandTests
     {
-        public static IEnumerable<Option> CreateRegisterOptions()
+        [Fact]
+        public void CreateRegisterOptions_HasExpectedOptions()
         {
-            
-            var options = new List<Option>
-            {
-                new Option<string>("--title")
-                {
-                    Description = "Application title",
-                    IsRequired = true
-                },
-                new Option<Room>("--room")
-                {
-                    Description = "Room",
-                    IsRequired = true
-                },
-                new Option<Category>("--category")
-                {
-                    Description = "Category",
-                    IsRequired = true
-                },
-                new Option<int>("--priority")
-                {
-                    Description = "Priority (1–10)",
-                    IsRequired = true
-                }
-            };
+            var opts = FactoryOptionsCommand.CreateRegisterOptions().ToList();
 
-            
-            options.OfType<Option<int>>().Single(o => o.Name == "priority")
-                   .AddValidator(r =>
-                   {
-                       var v = r.GetValueOrDefault<int>();
-                       if (v < 1 || v > 10)
-                       {
-                           r.ErrorMessage = "The priority must be in the range from 1 to 10.";
-                       }
-                    
-                   });
-
-            // Using reflection we correct the Name of each option
-            var nameProp = typeof(Option).GetProperty("Name");
-
-            foreach (var opt in options)
-            {
-                // We get the old name without hyphens
-                var orig = (string)nameProp.GetValue(opt);
-                // If there are no leading hyphens, add them
-                if (!orig.StartsWith("--"))
-                {
-                    nameProp.SetValue(opt, "--" + orig);
-                }
-                    
-            }
-
-            return options;
+            Assert.Equal(4, opts.Count);
+            var names = opts.SelectMany(o => o.Aliases).ToHashSet();
+            Assert.Contains("--title", names);
+            Assert.Contains("--room", names);
+            Assert.Contains("--category", names);
+            Assert.Contains("--priority", names);
+            Assert.All(opts, o => Assert.True(o.IsRequired));
         }
 
-        public static IEnumerable<Option> CreateDeleteOptions()
+        [Theory]
+        [InlineData("0")]
+        [InlineData("11")]
+        public void PriorityOption_ParserRejectsOutOfRange(string token)
         {
-            var options = new List<Option>
-            {
-                new Option<string>("--title")
-                {
-                    Description = "Application title",
-                    IsRequired = true
-                },
-                new Option<Room>("--room")
-                {
-                    Description = "Room",
-                    IsRequired = true
-                }
-            };
+            var priorityOpt = FactoryOptionsCommand
+                .CreateRegisterOptions()
+                .OfType<Option<int>>()
+                .Single(o => o.Aliases.Contains("--priority"));
 
-            var nameProp = typeof(Option).GetProperty("Name");
-            foreach (var opt in options)
-            {
-                var orig = (string)nameProp.GetValue(opt);
-                if (!orig.StartsWith("--"))
-                    nameProp.SetValue(opt, "--" + orig);
-            }
+            var root = new RootCommand { priorityOpt };
+            var parser = new Parser(root);
+            var result = parser.Parse($"--priority {token}");
 
-            return options;
+            Assert.NotEmpty(result.Errors);
+            Assert.Contains("range from 1 to 10", result.Errors[0].Message);
         }
 
-        public static IEnumerable<Option> CreateListOptions()
+        [Fact]
+        public void CreateDeleteOptions_HasExpectedOptions()
         {
-            var options = new List<Option>
-            {
-                new Option<string?>("--title") { Description = "Filter by title" },
-                new Option<DateTime?>(new[] { "--from" }, parseArgument: ParseDate) { Description = "Date from (yyyy-MM-dd)" },
-                new Option<DateTime?>(new[] { "--to"   }, parseArgument: ParseDate) { Description = "Date to (yyyy-MM-dd)" },
-                new Option<Category?>(new[] { "--category" }) { Description = "Filter by category" },
-                new Option<Room?>(new[] { "--room"     }) { Description = "Filter by room" }
-            };
-
-            options.Single(o => (string)typeof(Option).GetProperty("Name").GetValue(o) == "category")
-                   .AddValidator(r =>
-                   {
-                       if (r.Tokens.Count == 0)
-                       {
-                           return;
-                       }
-                           
-                       var raw = r.Tokens.Single().Value;
-                       if (!Enum.TryParse<Category>(raw, true, out _))
-                       {
-                           r.ErrorMessage = $"Invalid category '{raw}'. Valid: Electronics, Food, Other.";
-                       }
-                           
-                   });
-            options.Single(o => (string)typeof(Option).GetProperty("Name").GetValue(o) == "room")
-                   .AddValidator(r =>
-                   {
-                       if (r.Tokens.Count == 0)
-                       {
-                           return;
-                       }
-                       var raw = r.Tokens.Single().Value;
-                       if (!Enum.TryParse<Room>(raw, true, out _))
-                       {
-                           r.ErrorMessage = $"Invalid room '{raw}'. Valid: MeetingRoom, Kitchen, Bathroom.";
-                       }
-                           
-                   });
-
-            var nameProp = typeof(Option).GetProperty("Name");
-            foreach (var opt in options)
-            {
-                var orig = (string)nameProp.GetValue(opt);
-                if (!orig.StartsWith("--"))
-                {
-                    nameProp.SetValue(opt, "--" + orig);
-                }
-                    
-            }
-
-            return options;
+            var opts = FactoryOptionsCommand.CreateDeleteOptions().ToList();
+            Assert.Equal(2, opts.Count);
+            var names = opts.SelectMany(o => o.Aliases).ToHashSet();
+            Assert.Contains("--title", names);
+            Assert.Contains("--room", names);
+            Assert.All(opts, o => Assert.True(o.IsRequired));
         }
 
-        private static DateTime? ParseDate(ArgumentResult result)
+        [Fact]
+        public void CreateListOptions_HasExpectedOptionsAndOptional()
         {
-            var token = result.Tokens.SingleOrDefault()?.Value;
-            if (DateTime.TryParseExact(token, "yyyy-MM-dd", CultureInfo.InvariantCulture,DateTimeStyles.None, out var d))
+            var opts = FactoryOptionsCommand.CreateListOptions().ToList();
+            var names = opts.SelectMany(o => o.Aliases).ToHashSet();
+            var expected = new[] { "--title", "--from", "--to", "--category", "--room" };
+            foreach (var alias in expected)
             {
-                return d;
+                Assert.Contains(alias, names);
             }
+            Assert.All(opts, o => Assert.False(o.IsRequired));
+        }
 
-            result.ErrorMessage = $"Invalid date format '{token}', expected yyyy-MM-dd";
-            return null;
+        [Theory]
+        [InlineData("invalid_date")]
+        [InlineData("2025/01/01")]
+        public void FromOption_ParserRejectsBadDate(string bad)
+        {
+            var fromOpt = FactoryOptionsCommand
+                .CreateListOptions()
+                .OfType<Option<DateTime?>>()
+                .Single(o => o.Aliases.Contains("--from"));
+
+            var root = new RootCommand { fromOpt };
+            var parser = new Parser(root);
+            var result = parser.Parse($"--from {bad}");
+
+            Assert.NotEmpty(result.Errors);
+            Assert.Contains("expected yyyy-MM-dd", result.Errors[0].Message);
+        }
+
+        [Theory]
+        [InlineData("UnknownCat")]
+        public void CategoryOption_ValidatorRejectsInvalidEnum(string bad)
+        {
+            var opt = FactoryOptionsCommand
+                .CreateListOptions()
+                .OfType<Option<Category?>>()
+                .Single(o => o.Aliases.Contains("--category"));
+
+            var root = new RootCommand { opt };
+            var parser = new Parser(root);
+            var result = parser.Parse($"--category {bad}");
+
+            Assert.NotEmpty(result.Errors);
+            Assert.Contains("Invalid category", result.Errors[0].Message);
+        }
+
+        [Theory]
+        [InlineData("UnknownRoom")]
+        public void RoomOption_ValidatorRejectsInvalidEnum(string bad)
+        {
+            var opt = FactoryOptionsCommand
+                .CreateListOptions()
+                .OfType<Option<Room?>>()
+                .Single(o => o.Aliases.Contains("--room"));
+
+            var root = new RootCommand { opt };
+            var parser = new Parser(root);
+            var result = parser.Parse($"--room {bad}");
+
+            Assert.NotEmpty(result.Errors);
+            Assert.Contains("Invalid room", result.Errors[0].Message);
         }
     }
 }
+
